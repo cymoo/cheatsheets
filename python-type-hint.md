@@ -187,7 +187,7 @@ bad = Sub[int].make_pair('no')  # Error: Argument 1 to "make_pair" of "Base"
 ## Function overload
 
 1. Basic function overload
-   
+
     ```python
     from typing import Union, overload
 
@@ -879,7 +879,7 @@ class Base:
     x = y  # Error -- Box is invariant
     ```
 
-    The main difference between generic protocols and ordinary generic classes is that mypy checks that the declared variances of generic type variables in a protocol match how they are used in the protocol definition. 
+    The main difference between generic protocols and ordinary generic classes is that mypy checks that the declared variances of generic type variables in a protocol match how they are used in the protocol definition.
 
     ```python
     from typing import Protocol, TypeVar
@@ -894,7 +894,7 @@ class Base:
     ax = ay  # OK -- ReadOnlyBox is covariant
     ```
 
-    Generic protocols can also be recursive. 
+    Generic protocols can also be recursive.
 
     ```python
     T = TypeVar('T')
