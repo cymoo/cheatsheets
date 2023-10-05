@@ -223,7 +223,7 @@ bad = Sub[int].make_pair('no')  # Error: Argument 1 to "make_pair" of "Base"
     ```
 
 2. Method overload
-   
+
     ```python
     from typing import Sequence, TypeVar, Union, overload
 
@@ -412,6 +412,7 @@ class Base:
     ```
 
 5. Recursive protocols
+
     ```python
     from typing import TypeVar, Optional, Protocol
 
@@ -469,7 +470,7 @@ class Base:
 ## Generics
 
 1. A simple generic class
-   
+
     ```python
     from typing import TypeVar, Generic
 
@@ -645,6 +646,7 @@ class Base:
             # a Triangle is a Shape, and a Shape is a valid Union[Shape, int]
             shape_or_number = triangle
         ```
+
     * Callable is an example of type that behaves contravariant in types of arguments. That is, Callable[[Shape], int] is a subtype of Callable[[Triangle], int], despite Shape being a supertype of Triangle. T
 
         ```python
@@ -666,7 +668,7 @@ class Base:
         cost_of_paint_required needs a callable that can calculate the area of a triangle. If we give it a callable that can calculate the area of an arbitrary shape (not just triangles), everything still works.
 
     * List is an invariant generic type. Naively, one would think that it is covariant, like Sequence above, but consider this code. Another example of invariant type is Dict. Most mutable containers are invariant.
-    
+
         ```python
         class Circle(Shape):
             # The rotate method is only defined on Circle, not on Shape
@@ -711,7 +713,7 @@ class Base:
     ```
 
 8. Type variables with value restriction
-   
+
     ```python
     from typing import TypeVar
 
@@ -758,7 +760,7 @@ class Base:
     ```
 
     Parameter specifications also allow describe decorators that alter the signature of the input function:
-    
+
     ```python
     from typing import Callable, TypeVar, ParamSpec
 
@@ -802,7 +804,7 @@ class Base:
     ```
 
 10. Decorator factories
-    
+
     Functions that take arguments and return a decorator (also called second-order decorators), are similarly supported via generics:
 
     ```python
@@ -998,7 +1000,6 @@ class Base:
     ```
 
 ## 其他
-
 
 * Fix import cycles
 
