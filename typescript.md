@@ -8,7 +8,7 @@
   
 * 包装类型：`Boolean`, `String`, `Number`，不建议使用包装类型
 
-  ```javascript
+  ```typescript
   const s1:String = 'hello'; // 正确
   const s2:String = new String('hello'); // 正确
   const s3:string = 'hello'; // 正确
@@ -26,7 +26,7 @@
 
   * 任何其他类型的变量都可以赋值为`undefined`和`null`
 
-  ```javascript
+  ```typescript
   let age: number = 24;
 
   age = null;      // 正确
@@ -37,7 +37,7 @@
 
 * 数组
 
-  ```javascript
+  ```typescript
   let arr1: number[] = [1, 2, 3]
   let arr2: (number|string)[] = [1, 2, 3]
   let arr3: Array<number> = [1, 2, 3]
@@ -60,7 +60,7 @@
 
 * 元组
 
-  ```javascript
+  ```typescript
   const s: [string, string, boolean] = ['a', 'b', true]
 
   // 成员可选，问号只能用于尾部，即可选成员在最后
@@ -92,14 +92,14 @@
 
 * symbol
 
-  ```javascript
+  ```typescript
   let s: symbol = Symbol()
-
+  
   // 报错
   const x: symbol = Symbol();
   // 正确, unique symbol是symbol的子类型
   const y: unique symbol = Symbol();
-
+  
   // 如果把symbol当做属性名，类型只能是unique symbol
   const x:unique symbol = Symbol();
   const y:symbol = Symbol();
@@ -110,34 +110,49 @@
   
 * 值类型
 
-  ```javascript
+  ```typescript
   let x: 'hello'
   const x = 'https'
   ```
 
+* never
+  用在返回返回值中，表示该函数不会正常执行结束
+
+  ```typescript
+  // 抛出错误的函数
+  function fail(): never {
+    throw new Error("sorry")
+  }
+  
+  // 无限执行的函数
+  function runForever(): never {
+    while (true) {}
+  }
+  ```
+
 * 联合类型
   
-  ```javascript
+  ```typescript
   let x: string | number
   let gender: 'male' | 'female'
   ```
 
 * 交叉类型
   
-  ```javascript
+  ```typescript
   let x: number & string // never
-
+  
   let obj:
     { foo: string } &
     { bar: string };
-
+  
   obj = {
     foo: 'hello',
     bar: 'world'
   };
-
+  
   type A = { foo: number };
-
+  
   type B = A & { bar: number };
   ```
 
@@ -145,9 +160,126 @@
 
 * typeof运算符：TypeScript将其移植到了类型运算，操作数仍然是一个值（只能是标识符），但是返回的不是字符串，而是该值的TypeScript类型
 
-    ```javascript
+    ```typescript
     const a = { x: 0 };
-
+    
     type T0 = typeof a;   // { x: number }
     type T1 = typeof a.x; // number
     ```
+
+## 函数
+
+```typescript
+// 普通函数
+function foo(txt: string): void {
+  console.log('hello ' + txt)
+}
+
+// 表达式
+const bar: (txt: string) => void = function(txt) {
+  console.log('hello ' + txt)
+}
+
+// arrow function
+const baz = (x: number, y: number): number => x + y 
+
+// 实际参数可以少于类型指定的参数
+let func: (a: number, b: number) => number
+func = (a: number) => a  // OK
+
+// 函数类型可以采用对象写法，较少使用，适用于函数本身存在属性的情况
+let add: {
+  (x: number, y: number): number
+  version: string
+}
+add = function(x, y) {return x + y}
+add.version = '1.0'
+
+// 可选参数
+function f(x?: number) {}
+function f1(x: number | undefined) {}
+f1() // Error：x不能省略
+
+// 参数解构
+function f([x, y]: [number, number]) {}
+function f({a, b, c}: {a: number, b: number, c: number}) {}
+
+// rest参数
+// rest为数组
+function f(...nums: number[]) {}
+// rest为元组
+function f(...nums: [string, number]) {}
+function f(...nums: [string, number?]) {}
+// rest可以嵌套
+function f(x: number, ...nums: [string, ...number[]]) {}
+
+// readonly
+function sumOfArray(arr: readonly number[]) {
+  // ...
+  arr[0] = 0 // Error
+}
+
+// void
+// 对于函数字面量，如果返回值是void类型，则不能有返回值
+function f(): void {
+  // return 123 // Error
+  // return null // OK when strictNullChecks = false
+  // return undefined // OK
+}
+// NOTE: 但是对于变量，函数参数等，可以接受返回任意值的函数
+type voidFunc = () => void
+const f: voidFunc = () => {return 123}
+// 这里的void只是表示该函数的返回值没有利用价值，或是不需要使用；
+// 例如Array.prototype.forEach(fn)的fn返回值为void，但实际传入的函数是有返回值的；
+
+// never
+// 如果函数在某些情况下有正常返回值，其他情况抛出错误，则返回值可以省略never
+function sometimesThrow(): number {
+  if (Math.random() > 0.5) return 100
+  throw new Error('oh no')
+}
+// 类型推断为number，而不是number|never；
+// 原因为never为bottom type，number|never = number
+// 无论返回函数值是什么类型，都可能包含了抛出错误的情况
+const result = someTimesThrow()
+
+// 函数重载
+function reverse(str: string): string;
+function reverse(arr: any[]): any[];
+function reverse(stringOrArray: string|any[]): string|any[] {
+  if (typeof stringOrArray === 'string')
+    return stringOrArray.split('').reverse().join('');
+  else
+    return stringOrArray.slice().reverse();
+}
+// 函数重载也可以用对象表示
+type CreateElement = {
+  (tag:'a'): HTMLAnchorElement;
+  (tag:'canvas'): HTMLCanvasElement;
+  (tag:'table'): HTMLTableElement;
+  (tag:string): HTMLElement;
+}
+function createElement(tag: string): HTMLElement {}
+
+// 构造函数
+// 参数列表前加上new
+class Animal {
+  numLegs:number = 4;
+}
+type AnimalConstructor = new () => Animal;
+
+function create(c:AnimalConstructor):Animal {
+  return new c();
+}
+const a = create(Animal);
+// 构造函数还可以采用对象形式
+type F = {
+  new (s:string): object;
+};
+// 某些函数既可以当做普通函数，也可以作为构造函数
+type F = {
+  new (s:string): object;
+  (n?:number): number;
+}
+
+```
