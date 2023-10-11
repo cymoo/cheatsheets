@@ -1043,4 +1043,4 @@ const a:WithoutProperties = { prop: 1 };  // Error
     }
     ```
 
-    
+## 泛型
