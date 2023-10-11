@@ -47,7 +47,30 @@ TODO
 
 ## Annotations
 
-TODO
+Learn more about: https://kotlinlang.org/docs/annotations.html
+
+```kotlin
+@Target(AnnotationTarget.FUNCTION)
+@Retention(AnnotationRetention.RUNTIME)
+annotation class Router(val url: String, val method: String = "GET")
+
+class App {
+    @Router(url = "/")
+    fun index(): String = "hello world"
+}
+
+fun main() {
+    for (fn in App::class.functions) {
+        for (anno in fn.annotations) {
+            if (anno is Router) {
+                println("name: ${fn.name}, url: ${anno.url}, method: ${anno.method}")
+            }
+        }
+    }
+}
+```
+
+
 
 ## This
 
