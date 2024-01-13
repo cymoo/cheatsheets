@@ -2,6 +2,12 @@
 
 ## Basic
 
+* Basic Types
+
+  * Integer: `Byte`, `Short`, `Int`, `Long`, `Float`, `Double`
+
+  
+
 * Triple-quoted strings
 
   ```kotlin
@@ -39,11 +45,124 @@
   }
   ```
 
+* extension
+
+  ```kotlin
+  fun <R> (() -> R).memoize(): () -> R {
+      var cached: R? = null
+  
+      return {
+          cached ?: this().apply { cached = this }
+      }
+  }
+  
+  fun expensiveCompute(): Int {
+      println("doing some calculation...")
+      Thread.sleep(3000)
+      return 42
+  }
+  
+  infix fun <T> T?.shouldBe(expected: T?) = assert(this == expected)
+  
+  fun main() {
+      val memoizedFunc = ::expensiveCompute.memoize()
+      println(memoizedFunc())
+      println(memoizedFunc())
+      
+      obj.value shouldBe "foo"
+  }
+  ```
+
+* Lambda with receiver
+
+  ```kotlin
+  inline fun <T> T.apply(block: T.() -> Unit): T {
+      this.block()
+      return this
+  }
+  ```
+
+
+## Interface
+
+TODO
+
+## Generic
+
+* out: declaration-site variance
+
+  ```kotlin
+  fun <T, C : MutableCollection<in T>> Iterable<T>.filterTo(dest: C, predicate: (T) -> Boolean): C {
+      for (element in this) {
+          if (predicate(element)) {
+              dest.add(element)
+          }
+      }
+      return dest
+  }
+  ```
+
   
 
 ## Reflection﻿
 
-TODO
+[Mastering Kotlin Reflection](https://medium.com/@amoljp19/mastering-kotlin-reflection-bce2a561a467)
+
+In Kotlin, there are two reflection APIs you can work with. 
+
+1. standard Java reflection API `java.lang.reflect` which works perfectly with Kotlin.
+
+   ```kotlin
+   data class Person(val name: String, val age: Int)
+   
+   fun main() {
+       val person = Person("Alice", 25)
+       val properties = person.javaClass.declaredFields
+   
+       for (property in properties) {
+           property.isAccessible = true
+           val value = property.get(person)
+           println("${property.name}: $value")
+       }
+   }
+   ```
+
+   
+
+2. Kotlin reflection API, defined in the kotlin.reflect package. It provides access to concepts that don't exist in the Java world, such as properties and nullable types.
+
+   To use kotlin reflection, add `kotlin-reflect` artifact as a dependency.
+
+   ```kotlin
+   dependencies {
+       implementation "org.jetbrains.kotlin:kotlin-reflect:1.9.0"
+   }
+   ```
+
+   ```kotlin
+   data class Person(
+       val name: String,
+       val age: Int
+   )
+   
+   fun main() {
+       val person = Person("Jack", 10)
+       
+       // Serialization using reflection
+       val serializedData = person::class.memberProperties
+           .associateBy({ it.name }, { it.get(person) })
+       
+       println(serializedData) // Output: {name=Jack, age=10}
+       
+       // Deserialization using reflection
+       val deserializedPerson = person::class.constructors.first()
+           .call(serializedData["name"], serializedData["age"])
+       
+       println(deserializedPerson) // Output: Person(name=Jack, age=10)
+   }
+   ```
+
+   ![Hierarchy of interfaces in Kotlin Reflection API](./interfaces-in-kt-reflection.jpeg)
 
 ## Annotations
 
@@ -69,8 +188,6 @@ fun main() {
     }
 }
 ```
-
-
 
 ## This
 
@@ -107,6 +224,33 @@ class A { // implicit label @A
 
 ```
 
+## Misc
+
+* JVM name
+
+  ```kotlin
+  @JvmName("filterValidString")
+  fun List<String>.filterValid(): List<String> {
+      TODO()
+  }
+  
+  @JvmName("filterValidInt")
+  fun List<Int>.filterValid(): List<Int> {
+      TODO()
+  }
+  
+  @get:JvmName("x")
+  @set:JvmName("changeX")
+  var x = 23
+  
+  public static void testJvmNameOnProperty() {
+      SomeFileKt.changeX(111);
+      SomeFileKt.x();
+  }
+  ```
+  
+  
+
 ## Standard library
 
 TODO
@@ -118,4 +262,103 @@ TODO
 ## Calling Kotlin from Java
 
 TODO 
+
+## Some Examples
+
+```kotlin
+import java.util.concurrent.atomic.AtomicInteger
+
+enum class Level {
+    INFO, WARNING, ERROR, FATAL,
+}
+
+data class Issue(
+    var id: Int? = null,
+    val title: String,
+    val project: String,
+    val level: Level,
+) {
+    init {
+        if (id == null) {
+            id = counter.getAndIncrement()
+        }
+    }
+
+    private companion object {
+        var counter: AtomicInteger = AtomicInteger(1)
+    }
+}
+
+class IssuePredicate(private val project: String) : (Issue) -> Boolean {
+    override fun invoke(issue: Issue) = this.project == issue.project && issue.isImportant()
+
+    // NOTE: extension func can be defined in a class
+    private fun Issue.isImportant(): Boolean {
+        println("project is $project")
+        return this.level == Level.ERROR || this.level == Level.FATAL
+    }
+}
+
+fun main() {
+    val issues = listOf(
+        Issue(title = "hello world", project = "foo", level = Level.FATAL),
+        Issue(title = "hello java", project = "bar", level = Level.ERROR),
+        Issue(title = "hello kotlin", project = "foo", level = Level.FATAL),
+        Issue(title = "hello rust", project = "bar", level = Level.INFO),
+    )
+    val predicate = IssuePredicate("bar")
+    val result = issues.filter(predicate)
+    println(result)
+}
+```
+
+[Object updater pattern in Kotlin](http://tuhrig.de/object-updater-pattern-in-kotlin/)
+
+```kotlin
+import kotlin.reflect.KMutableProperty0
+import kotlin.reflect.jvm.isAccessible
+
+fun main() {
+    val p = Product("foo", 1)
+    Updater()
+        .update(p::name).to("bar")
+        .update(p::price).to(2)
+        .execute()
+    println(p)
+}
+
+data class Product(var name: String, var price: Int)
+
+class Updater {
+    private val updatesToExecute = mutableListOf<Update>()
+
+    fun update(field: KMutableProperty0<*>): Update {
+        val updateToExecute = Update(this, field)
+        updatesToExecute.add(updateToExecute)
+        return updateToExecute
+    }
+
+    fun execute() = updatesToExecute.map(Update::execute).any { it }
+
+    class Update(
+        private val updater: Updater,
+        private val field: KMutableProperty0<*>
+    ) {
+        private var newValue: Any? = null
+
+        fun to(newValue: Any?): Updater {
+            this.newValue = newValue
+            return updater
+        }
+
+        fun execute(): Boolean {
+            return if (newValue != null && field.get() != newValue) {
+                field.isAccessible = true
+                field.setter.call(newValue)
+                true
+            } else false
+        }
+    }
+}
+```
 

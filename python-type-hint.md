@@ -28,7 +28,7 @@ z: Sequence[str] = x
   ```python
   def stop() -> NoReturn:
       raise Exception('no way)
-
+  
   def run_forever() -> NoReturn:
       while True:
           time.sleep(1)
@@ -43,9 +43,9 @@ z: Sequence[str] = x
     ```python
     class C:
         def __init__(self, app: str) -> None: pass
-
+  
     CallableType = Callable[[str], C]
-
+  
     def class_or_callable(arg: CallableType) -> None:
         inst = arg("my_app")
         reveal_type(inst)  # Revealed type is "C"
@@ -55,9 +55,9 @@ z: Sequence[str] = x
   
     ```python
     from typing import NamedTuple
-
+    
     Point = NamedTuple('Point', [('x', int), ('y', int)])
-
+    
     # or
     class Point(NamedTuple):
         x: int
@@ -111,7 +111,7 @@ z: Sequence[str] = x
 
     ```python
     from typing import cast
-
+    
     o: object = [1]
     x = cast(list[int], o)  # OK
     y = cast(list[str], o)  # OK (cast performs no actual runtime check)
@@ -226,16 +226,16 @@ bad = Sub[int].make_pair('no')  # Error: Argument 1 to "make_pair" of "Base"
 
     ```python
     from typing import Sequence, TypeVar, Union, overload
-
+    
     T = TypeVar('T')
-
+    
     class MyList(Sequence[T]):
         @overload
         def __getitem__(self, index: int) -> T: ...
-
+    
         @overload
         def __getitem__(self, index: slice) -> Sequence[T]: ...
-
+    
         def __getitem__(self, index: Union[int, slice]) -> Union[T, Sequence[T]]:
             if isinstance(index, int):
                 # Return a T here
@@ -450,19 +450,19 @@ class Base:
 
     ```python
     from typing import Optional, Iterable, Protocol
-
+    
     class Combiner(Protocol):
         def __call__(self, *vals: bytes, maxlen: Optional[int] = None) -> list[bytes]: ...
-
+    
     def batch_proc(data: Iterable[bytes], cb_results: Combiner) -> bytes:
         for item in data:
             ...
-
+    
     def good_cb(*vals: bytes, maxlen: Optional[int] = None) -> list[bytes]:
         ...
     def bad_cb(*vals: bytes, maxitems: Optional[int]) -> list[bytes]:
         ...
-
+    
     batch_proc([], good_cb)  # OK
     batch_proc([], bad_cb)   # Error! Argument 2 has incompatible type because of different name and kind
     ```
@@ -511,18 +511,18 @@ class Base:
 
     ```python
     from typing import Generic, TypeVar, Mapping, Iterator
-
+    
     KT = TypeVar('KT')
     VT = TypeVar('VT')
-
+    
     # This is a generic subclass of Mapping
     class MyMap(Mapping[KT, VT]):
         def __getitem__(self, k: KT) -> VT: ...
         def __iter__(self) -> Iterator[KT]: ...
         def __len__(self) -> int: ...
-
+    
     items: MyMap[str, int]  # OK
-
+    
     # This is a non-generic subclass of dict
     class StrDict(dict[str, str]):
         def __str__(self) -> str:
@@ -531,11 +531,11 @@ class Base:
 
     data: StrDict[int, int]  # Error! StrDict is not generic
     data2: StrDict  # OK
-
+    
     # This is a user-defined generic class
     class Receiver(Generic[T]):
         def accept(self, value: T) -> None: ...
-
+    
     # This is a generic subclass of Receiver
     class AdvancedReceiver(Receiver[T]): ...
     ```
@@ -556,19 +556,19 @@ class Base:
 
     ```python
     from typing import TypeVar
-
+    
     T = TypeVar('T', bound='Shape')
-
+    
     class Shape:
         def set_scale(self: T, scale: float) -> T:
             self.scale = scale
             return self
-
+    
     class Circle(Shape):
         def set_radius(self, r: float) -> 'Circle':
             self.radius = r
             return self
-
+    
     class Square(Shape):
         def set_width(self, w: float) -> 'Square':
             self.width = w
@@ -580,24 +580,24 @@ class Base:
 
 
     # factory methods
-
+    
     from typing import TypeVar, Type
-
+    
     T = TypeVar('T', bound='Friend')
-
+    
     class Friend:
         other: "Friend" = None
-
+    
         @classmethod
         def make_pair(cls: Type[T]) -> tuple[T, T]:
             a, b = cls(), cls()
             a.other = b
             b.other = a
             return a, b
-
+    
     class SuperFriend(Friend):
         pass
-
+    
     a, b = SuperFriend.make_pair()
     ```
 
@@ -686,18 +686,18 @@ class Base:
 
         ```python
         from typing import Generic, TypeVar
-
+    
         T_co = TypeVar('T_co', covariant=True)
-
+    
         class Box(Generic[T_co]):  # this type is declared covariant
             def __init__(self, content: T_co) -> None:
                 self._content = content
-
+    
             def get_content(self) -> T_co:
                 return self._content
-
+    
         def look_into(box: Box[Animal]): ...
-
+    
         my_box = Box(Cat())
         look_into(my_box)  # OK, but mypy would complain here for an invariant type
         ```
@@ -725,20 +725,20 @@ class Base:
 
     ```python
     from typing import Any, Callable, TypeVar, cast
-
+    
     F = TypeVar('F', bound=Callable[..., Any])
-
+    
     # A decorator that preserves the signature.
     def printing_decorator(func: F) -> F:
         def wrapper(*args, **kwds): # NOTE: wrapper is not type checked
             print("Calling", func)
             return func(*args, **kwds)
         return cast(F, wrapper)  # NOTE: cast is required
-
+    
     @printing_decorator
     def add_forty_two(value: int) -> int:
         return value + 42
-
+    
     a = add_forty_two(3)
     reveal_type(a)      # Revealed type is "builtins.int"
     add_forty_two('x')  # Argument 1 to "add_forty_two" has incompatible type "str"; expected "int"
@@ -748,10 +748,10 @@ class Base:
 
     ```python
     from typing import Callable, TypeVar, ParamSpec
-
+    
     P = ParamSpec('P')
     T = TypeVar('T')
-
+    
     def printing_decorator(func: Callable[P, T]) -> Callable[P, T]:
         def wrapper(*args: P.args, **kwds: P.kwargs) -> T:
             print("Calling", func)
@@ -763,20 +763,20 @@ class Base:
 
     ```python
     from typing import Callable, TypeVar, ParamSpec
-
+    
     P = ParamSpec('P')
     T = TypeVar('T')
-
+    
     # We reuse 'P' in the return type, but replace 'T' with 'str'
     def stringify(func: Callable[P, T]) -> Callable[P, str]:
         def wrapper(*args: P.args, **kwds: P.kwargs) -> str:
             return str(func(*args, **kwds))
         return wrapper
-
+    
     @stringify
     def add_forty_two(value: int) -> int:
         return value + 42
-
+    
     a = add_forty_two(3)
     reveal_type(a)      # Revealed type is "builtins.str"
     add_forty_two('x')  # error: Argument 1 to "add_forty_two" has incompatible type "str"; expected "int"
@@ -786,20 +786,20 @@ class Base:
 
     ```python
     from typing import Callable, TypeVar, Concatenate, ParamSpec
-
+    
     P = ParamSpec('P')
     T = TypeVar('T')
-
+    
     def printing_decorator(func: Callable[P, T]) -> Callable[Concatenate[str, P], T]:
         def wrapper(msg: str, /, *args: P.args, **kwds: P.kwargs) -> T:
             print("Calling", func, "with", msg)
             return func(*args, **kwds)
         return wrapper
-
+    
     @printing_decorator
     def add_forty_two(value: int) -> int:
         return value + 42
-
+    
     a = add_forty_two('three', 3)
     ```
 
@@ -917,29 +917,29 @@ class Base:
 
     ```python
     from typing import TypeVar, Iterable, Union, Callable
-
+    
     S = TypeVar('S')
-
+    
     TInt = tuple[int, S]
     UInt = Union[S, int]
     CBack = Callable[..., S]
-
+    
     def response(query: str) -> UInt[str]:  # Same as Union[str, int]
         ...
     def activate(cb: CBack[S]) -> S:        # Same as Callable[..., S]
         ...
     table_entry: TInt  # Same as tuple[int, Any]
-
+    
     T = TypeVar('T', int, float, complex)
-
+    
     Vec = Iterable[tuple[T, T]]
-
+    
     def inproduct(v: Vec[T]) -> T:
         return sum(x*y for x, y in v)
-
+    
     def dilate(v: Vec[T], scale: T) -> Vec[T]:
         return ((x * scale, y * scale) for x, y in v)
-
+    
     v1: Vec[int] = []      # Same as Iterable[tuple[int, int]]
     v2: Vec = []           # Same as Iterable[tuple[Any, Any]]
     v3: Vec[int, int] = [] # Error: Invalid alias, too many type arguments!
@@ -987,16 +987,16 @@ class Base:
     ```python
     from typing import Type, TypeVar
     from typing import TypeGuard  # use `typing_extensions` for `python<3.10`
-
+    
     _T = TypeVar("_T")
-
+    
     def is_set_of(val: set[Any], type: Type[_T]) -> TypeGuard[set[_T]]:
         return all(isinstance(x, type) for x in val)
-
+    
     items: set[Any]
     if is_set_of(items, str):
         reveal_type(items)  # set[str]
-
+    
     ```
 
 ## 其他
@@ -1006,17 +1006,17 @@ class Base:
     ```python
     # foo.py
     from typing import TYPE_CHECKING
-
+    
     if TYPE_CHECKING:  # 运行时不会执行
         import bar
-
+    
     def listify(arg: 'bar.BarClass') -> 'list[bar.BarClass]':
         return [arg]
-
+    
     # bar.py
-
+    
     from foo import listify
-
+    
     class BarClass:
         def listifyme(self) -> 'list[BarClass]':
             return listify(self)
